@@ -37,5 +37,6 @@ web/static/         – CSS, minimales JS
 - `go test -tags integration ./...` – inkl. Integrationstests (benötigt laufende DB)
 - `go run github.com/pressly/goose/v3/cmd/goose -dir internal/db/migrations postgres $DATABASE_URL up` – Migrationen ausführen
 - `go build ./cmd/server` – Binary bauen
+- `DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable go run ./cmd/import` – Ebooks importieren (läuft lokal, nicht im Container)
 - `docker compose up --build` – App + Ollama als Container starten
 - `docker compose up --build -d` – im Hintergrund starten
