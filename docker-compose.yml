@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: ebook
       POSTGRES_DB: ebook_search
     volumes:
-      - ${POSTGRES_DATA_PATH:-./data/postgres}:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_PATH:-./data/postgres}:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ebook -d ebook_search"]
       interval: 5s
