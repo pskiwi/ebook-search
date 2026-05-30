@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/pskiwi/ebook-search/internal/classifier"
 	"github.com/pskiwi/ebook-search/internal/db"
 	"github.com/pskiwi/ebook-search/internal/importer"
 )
@@ -26,8 +27,20 @@ func main() {
 	}
 	defer pool.Close()
 
+	ctx := context.Background()
 	imp := importer.New(pool, *baseDir)
-	if err := imp.Run(context.Background(), *ebookDir); err != nil {
+
+	if ollamaURL := os.Getenv("OLLAMA_URL"); ollamaURL != "" {
+		cl := classifier.New(ollamaURL)
+		log.Printf("Pulling classification model (llama3.2), this may take a while on first run…")
+		if err := cl.EnsureModel(ctx); err != nil {
+			log.Printf("WARN  could not pull classifier model: %v — skipping genre classification", err)
+		} else {
+			imp.WithClassifier(cl)
+		}
+	}
+
+	if err := imp.Run(ctx, *ebookDir); err != nil {
 		log.Fatalf("import: %v", err)
 	}
 }

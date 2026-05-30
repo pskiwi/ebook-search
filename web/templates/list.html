@@ -1,0 +1,55 @@
+{{define "list.html"}}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merkliste – Ebook Search</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="/" class="header-link">Ebook Search</a></h1>
+      <p class="total-count">Merkliste · {{len .Books}} {{if eq (len .Books) 1}}Buch{{else}}Bücher{{end}}</p>
+    </header>
+    {{if .Books}}
+    <ul class="books" id="book-list">
+      {{range .Books}}
+      <li class="book"
+          hx-get="/book/{{(index .Formats 0).ID}}"
+          hx-target="#detail-container"
+          hx-swap="innerHTML"
+          hx-trigger="click">
+        <div class="book-info">
+          <span class="book-title">{{.Title}}</span>
+          <span class="book-author">{{.Author}}</span>
+          {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
+          <span class="book-path">{{.FilePath}}</span>
+        </div>
+        {{if gt (len .Formats) 1}}
+        <div class="book-formats">
+          {{range .Formats}}
+          <span class="badge {{.FormatClass}}"
+                hx-get="/book/{{.ID}}"
+                hx-target="#detail-container"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                onclick="event.stopPropagation()">{{.Format}}</span>
+          {{end}}
+        </div>
+        {{else}}
+        <span class="badge {{.FormatClass}}">{{.Format}}</span>
+        {{end}}
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="empty">Die Merkliste ist leer.</p>
+    {{end}}
+  </div>
+  <div id="detail-container"></div>
+</body>
+</html>
+{{end}}

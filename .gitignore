@@ -1,4 +1,8 @@
-server
+/server
+/classify
+/import
 *.env
 .env
 data/
+.claude/
+.playwright-mcp/

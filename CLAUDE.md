@@ -38,5 +38,7 @@ web/static/         – CSS, minimales JS
 - `go run github.com/pressly/goose/v3/cmd/goose -dir internal/db/migrations postgres $DATABASE_URL up` – Migrationen ausführen
 - `go build ./cmd/server` – Binary bauen
 - `DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable go run ./cmd/import` – Ebooks importieren (läuft lokal, nicht im Container)
-- `docker compose up --build` – App + Ollama als Container starten
+- `DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable go run ./cmd/classify` – Bücher klassifizieren (Mac lokal, nutzt natives Ollama mit Metal/GPU)
+- `docker compose up --build` – App + PostgreSQL starten
 - `docker compose up --build -d` – im Hintergrund starten
+- `docker compose --profile classify run --rm classify` – Bücher klassifizieren im Container (NAS, Ollama läuft ebenfalls in Docker)

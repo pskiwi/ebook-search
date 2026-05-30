@@ -1,0 +1,31 @@
+{{define "book-detail"}}
+<div class="detail-overlay" id="book-detail" onclick="if(event.target===this)this.remove()">
+  <div class="detail-panel">
+    <button class="detail-close" onclick="document.getElementById('book-detail').remove()">✕</button>
+    <div class="detail-header">
+      <span class="badge {{.FormatClass}}">{{.Format}}</span>
+      {{if .Genre}}<span class="detail-genre">{{.Genre}}</span>{{end}}
+    </div>
+    <h2 class="detail-title">{{.Title}}</h2>
+    {{if .Author}}<p class="detail-author">{{.Author}}</p>{{end}}
+    {{if .Description}}
+    <p class="detail-description">{{.Description}}</p>
+    {{end}}
+    <p class="detail-path">{{.FilePath}}</p>
+    {{template "list-toggle-btn" .}}
+  </div>
+</div>
+{{end}}
+
+{{define "list-toggle-btn"}}
+<button class="list-toggle-btn{{if .InList}} in-list{{end}}"
+        hx-post="/list/toggle/{{.ID}}"
+        hx-target="this"
+        hx-swap="outerHTML">
+  {{if .InList}}✓ Auf Merkliste{{else}}+ Zur Merkliste{{end}}
+</button>
+{{end}}
+
+{{define "list-count-oob"}}
+<a href="/list" class="list-link" id="list-count" hx-swap-oob="true">Merkliste{{if gt .ListCount 0}} ({{.ListCount}}){{end}}</a>
+{{end}}

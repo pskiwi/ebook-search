@@ -1,18 +1,82 @@
 {{define "results"}}
-<p class="count">{{len .}} {{if eq (len .) 1}}Buch{{else}}Bücher{{end}}</p>
-{{if .}}
-<ul class="books">
-  {{range .}}
-  <li class="book">
+<p class="count">{{len .Books}}{{if .HasMore}}+{{end}} {{if eq (len .Books) 1}}Buch{{else}}Bücher{{end}}</p>
+{{if .Books}}
+<ul class="books" id="book-list">
+  {{range .Books}}
+  <li class="book"
+      hx-get="/book/{{(index .Formats 0).ID}}"
+      hx-target="#detail-container"
+      hx-swap="innerHTML"
+      hx-trigger="click">
     <div class="book-info">
       <span class="book-title">{{.Title}}</span>
       <span class="book-author">{{.Author}}</span>
+      {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
+      <span class="book-path">{{.FilePath}}</span>
     </div>
+    {{if gt (len .Formats) 1}}
+    <div class="book-formats">
+      {{range .Formats}}
+      <span class="badge {{.FormatClass}}"
+            hx-get="/book/{{.ID}}"
+            hx-target="#detail-container"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            onclick="event.stopPropagation()">{{.Format}}</span>
+      {{end}}
+    </div>
+    {{else}}
     <span class="badge {{.FormatClass}}">{{.Format}}</span>
+    {{end}}
+  </li>
+  {{end}}
+  {{if .HasMore}}
+  <li id="load-more" class="load-more">
+    <button hx-get="/search?q={{urlquery .Query}}&genre={{urlquery .Genre}}&offset={{.NextOffset}}"
+            hx-target="#load-more"
+            hx-swap="outerHTML">Weitere 100 laden</button>
   </li>
   {{end}}
 </ul>
 {{else}}
 <p class="empty">Keine Bücher gefunden.</p>
+{{end}}
+{{end}}
+
+{{define "more-results"}}
+{{range .Books}}
+<li class="book"
+    hx-get="/book/{{(index .Formats 0).ID}}"
+    hx-target="#detail-container"
+    hx-swap="innerHTML"
+    hx-trigger="click">
+  <div class="book-info">
+    <span class="book-title">{{.Title}}</span>
+    <span class="book-author">{{.Author}}</span>
+    {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
+    <span class="book-path">{{.FilePath}}</span>
+  </div>
+  {{if gt (len .Formats) 1}}
+  <div class="book-formats">
+    {{range .Formats}}
+    <span class="badge {{.FormatClass}}"
+          hx-get="/book/{{.ID}}"
+          hx-target="#detail-container"
+          hx-swap="innerHTML"
+          hx-trigger="click"
+          onclick="event.stopPropagation()">{{.Format}}</span>
+    {{end}}
+  </div>
+  {{else}}
+  <span class="badge {{.FormatClass}}">{{.Format}}</span>
+  {{end}}
+</li>
+{{end}}
+{{if .HasMore}}
+<li id="load-more" class="load-more">
+  <button hx-get="/search?q={{urlquery .Query}}&genre={{urlquery .Genre}}&offset={{.NextOffset}}"
+          hx-target="#load-more"
+          hx-swap="outerHTML">Weitere 100 laden</button>
+</li>
 {{end}}
 {{end}}

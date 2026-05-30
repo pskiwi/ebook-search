@@ -9,6 +9,7 @@ import (
 type Book struct {
 	Title   string
 	Author  string
+	Genre   string
 	Content string
 }
 

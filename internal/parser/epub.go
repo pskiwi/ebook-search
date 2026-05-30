@@ -19,8 +19,9 @@ type epubContainer struct {
 
 type epubPackage struct {
 	Metadata struct {
-		Title  string `xml:"title"`
-		Author string `xml:"creator"`
+		Title   string   `xml:"title"`
+		Author  string   `xml:"creator"`
+		Subject []string `xml:"subject"`
 	} `xml:"metadata"`
 	Manifest struct {
 		Items []struct {
@@ -58,7 +59,11 @@ func ParseEPUBMeta(path string) (*Book, error) {
 	if err := xml.Unmarshal(opfData, &pkg); err != nil {
 		return nil, fmt.Errorf("parse opf: %w", err)
 	}
-	return &Book{Title: pkg.Metadata.Title, Author: pkg.Metadata.Author}, nil
+	return &Book{
+		Title:  pkg.Metadata.Title,
+		Author: pkg.Metadata.Author,
+		Genre:  strings.Join(pkg.Metadata.Subject, ", "),
+	}, nil
 }
 
 func ParseEPUB(path string) (*Book, error) {

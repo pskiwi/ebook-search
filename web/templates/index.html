@@ -11,9 +11,14 @@
   <div class="container">
     <header>
       <h1>Ebook Search</h1>
+      <div class="header-meta">
+        <p class="total-count">{{.TotalCount}} Bücher</p>
+        <a href="/list" class="list-link" id="list-count">Merkliste{{if gt .ListCount 0}} ({{.ListCount}}){{end}}</a>
+      </div>
     </header>
     <div class="search-wrap">
       <input
+        id="q-input"
         type="search"
         name="q"
         placeholder="Titel oder Autor suchen…"
@@ -22,11 +27,28 @@
         hx-get="/search"
         hx-target="#results"
         hx-trigger="input changed delay:200ms, search"
+        hx-include="#genre-input"
       >
+      <input
+        id="genre-input"
+        type="search"
+        name="genre"
+        placeholder="Genre filtern…"
+        autocomplete="off"
+        list="genres-list"
+        hx-get="/search"
+        hx-target="#results"
+        hx-trigger="input changed delay:200ms, search, change"
+        hx-include="#q-input"
+      >
+      <datalist id="genres-list">
+        {{range .Genres}}<option value="{{.}}">{{end}}
+      </datalist>
     </div>
     <div id="results">
       {{template "results" .}}
     </div>
   </div>
+  <div id="detail-container"></div>
 </body>
 </html>
