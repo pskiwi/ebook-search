@@ -1,0 +1,28 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://user:pass@postgres:5432/ebook_search?sslmode=disable
+      OLLAMA_URL: http://ollama:11434
+    depends_on:
+      - ollama
+    networks:
+      - ebook
+      - postgres_default  # externes Netzwerk des laufenden Postgres-Containers
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - ebook
+
+volumes:
+  ollama_data:
+
+networks:
+  ebook:
+  postgres_default:
+    external: true  # Name des bestehenden Docker-Netzwerks anpassen
