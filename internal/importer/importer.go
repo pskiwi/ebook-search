@@ -75,8 +75,15 @@ func (imp *Importer) importFile(ctx context.Context, path string) (bool, error) 
 	if err != nil {
 		return false, fmt.Errorf("parse meta: %w", err)
 	}
-	if book.Title == "" {
-		book.Title = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+
+	book.Title = parser.CleanMeta(book.Title)
+	book.Author = parser.CleanMeta(book.Author)
+
+	if book.Title == "" || looksLikeFilename(book.Title) {
+		book.Title = titleFromPath(path)
+	}
+	if book.Author == "" {
+		book.Author = authorFromPath(path)
 	}
 
 	_, err = imp.db.ExecContext(ctx, `
@@ -95,6 +102,31 @@ func (imp *Importer) importFile(ctx context.Context, path string) (bool, error) 
 
 	log.Printf("OK    %q — %q", book.Title, book.Author)
 	return true, nil
+}
+
+// titleFromPath extracts the title from Calibre's "Title (ID)" parent directory.
+// Falls back to grandparent if parent also looks like a filename.
+func titleFromPath(path string) string {
+	parent := filepath.Base(filepath.Dir(path))
+	if i := strings.LastIndex(parent, " ("); i > 0 {
+		parent = strings.TrimSpace(parent[:i])
+	}
+	if looksLikeFilename(parent) {
+		return authorFromPath(path)
+	}
+	return parent
+}
+
+// authorFromPath uses the grandparent directory as author (Calibre: Author/Title/file).
+func authorFromPath(path string) string {
+	return filepath.Base(filepath.Dir(filepath.Dir(path)))
+}
+
+func looksLikeFilename(title string) bool {
+	lower := strings.ToLower(title)
+	return strings.Contains(lower, ".rtf") ||
+		strings.Contains(lower, ".doc") ||
+		strings.HasPrefix(lower, "microsoft word")
 }
 
 func fileHash(path string) (string, error) {
