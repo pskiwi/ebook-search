@@ -5,15 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ebook Search</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
-  <main>
-    <h1>Ebook Search</h1>
-    <form hx-get="/search" hx-target="#results" hx-trigger="input changed delay:300ms, submit">
-      <input type="search" name="q" placeholder="Suche..." autofocus>
-    </form>
-    <div id="results"></div>
-  </main>
+  <div class="container">
+    <header>
+      <h1>Ebook Search</h1>
+    </header>
+    <div class="search-wrap">
+      <input
+        type="search"
+        name="q"
+        placeholder="Titel oder Autor suchen…"
+        autofocus
+        autocomplete="off"
+        hx-get="/search"
+        hx-target="#results"
+        hx-trigger="input changed delay:200ms, search"
+      >
+    </div>
+    <div id="results">
+      {{template "results" .}}
+    </div>
+  </div>
 </body>
 </html>

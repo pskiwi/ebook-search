@@ -1,21 +1,116 @@
-*, *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: system-ui, sans-serif;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f5;
   color: #222;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #111;
+}
+
+.search-wrap {
+  margin-bottom: 1.5rem;
 }
 
 input[type="search"] {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-#results {
-  margin-top: 1.5rem;
+input[type="search"]:focus {
+  border-color: #4f7ef7;
+  box-shadow: 0 0 0 3px rgba(79, 126, 247, 0.15);
+}
+
+.count {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+}
+
+.books {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.book {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  transition: box-shadow 0.15s;
+}
+
+.book:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.book-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.book-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-author {
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.badge {
+  flex-shrink: 0;
+  margin-left: 1rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge.epub {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge.pdf {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.empty {
+  color: #888;
+  font-size: 0.9rem;
+  padding: 1rem 0;
 }

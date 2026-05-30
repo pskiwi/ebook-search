@@ -1,0 +1,18 @@
+{{define "results"}}
+<p class="count">{{len .}} {{if eq (len .) 1}}Buch{{else}}Bücher{{end}}</p>
+{{if .}}
+<ul class="books">
+  {{range .}}
+  <li class="book">
+    <div class="book-info">
+      <span class="book-title">{{.Title}}</span>
+      <span class="book-author">{{.Author}}</span>
+    </div>
+    <span class="badge {{.FormatClass}}">{{.Format}}</span>
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<p class="empty">Keine Bücher gefunden.</p>
+{{end}}
+{{end}}
