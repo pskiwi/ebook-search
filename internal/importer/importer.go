@@ -10,21 +10,18 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
-	"github.com/pskiwi/ebook-search/internal/embeddings"
 	"github.com/pskiwi/ebook-search/internal/parser"
 )
 
 type Importer struct {
 	db      *sql.DB
-	embed   *embeddings.Client
 	baseDir string
 }
 
-func New(db *sql.DB, embed *embeddings.Client, baseDir string) *Importer {
-	return &Importer{db: db, embed: embed, baseDir: baseDir}
+func New(db *sql.DB, baseDir string) *Importer {
+	return &Importer{db: db, baseDir: baseDir}
 }
 
 func (imp *Importer) Run(ctx context.Context, dir string) error {
@@ -56,7 +53,6 @@ func (imp *Importer) Run(ctx context.Context, dir string) error {
 	return err
 }
 
-// importFile returns (true, nil) if imported, (false, nil) if unchanged, (_, err) on failure.
 func (imp *Importer) importFile(ctx context.Context, path string) (bool, error) {
 	relPath, err := filepath.Rel(imp.baseDir, path)
 	if err != nil {
@@ -75,69 +71,29 @@ func (imp *Importer) importFile(ctx context.Context, path string) (bool, error) 
 		return false, nil
 	}
 
-	log.Printf("import %s", relPath)
-
-	book, err := parser.Parse(path)
+	book, err := parser.ParseMeta(path)
 	if err != nil {
-		return false, fmt.Errorf("parse: %w", err)
+		return false, fmt.Errorf("parse meta: %w", err)
 	}
 	if book.Title == "" {
 		book.Title = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	}
-	if strings.TrimSpace(book.Content) == "" {
-		return false, fmt.Errorf("no text content extracted")
-	}
 
-	chunks := chunk(book.Content)
-	if len(chunks) == 0 {
-		return false, fmt.Errorf("no chunks")
-	}
-
-	tx, err := imp.db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	var bookID int64
-	err = tx.QueryRowContext(ctx, `
+	_, err = imp.db.ExecContext(ctx, `
 		INSERT INTO books (title, author, file_path, file_hash)
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (file_path) DO UPDATE
 			SET title      = EXCLUDED.title,
 			    author     = EXCLUDED.author,
 			    file_hash  = EXCLUDED.file_hash,
-			    created_at = NOW()
-		RETURNING id`,
+			    created_at = NOW()`,
 		book.Title, nullString(book.Author), relPath, hash,
-	).Scan(&bookID)
+	)
 	if err != nil {
 		return false, fmt.Errorf("upsert book: %w", err)
 	}
 
-	if _, err = tx.ExecContext(ctx, "DELETE FROM chunks WHERE book_id = $1", bookID); err != nil {
-		return false, fmt.Errorf("delete old chunks: %w", err)
-	}
-
-	for i, text := range chunks {
-		vec, err := imp.embed.Embed(ctx, text)
-		if err != nil {
-			return false, fmt.Errorf("embed chunk %d: %w", i, err)
-		}
-		if _, err = tx.ExecContext(ctx, `
-			INSERT INTO chunks (book_id, content, embedding)
-			VALUES ($1, $2, $3::vector)`,
-			bookID, text, formatVector(vec),
-		); err != nil {
-			return false, fmt.Errorf("insert chunk %d: %w", i, err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return false, fmt.Errorf("commit: %w", err)
-	}
-
-	log.Printf("OK    %q by %q (%d chunks)", book.Title, book.Author, len(chunks))
+	log.Printf("OK    %q — %q", book.Title, book.Author)
 	return true, nil
 }
 
@@ -159,12 +115,4 @@ func nullString(s string) any {
 		return nil
 	}
 	return s
-}
-
-func formatVector(v []float32) string {
-	parts := make([]string, len(v))
-	for i, f := range v {
-		parts[i] = strconv.FormatFloat(float64(f), 'f', -1, 32)
-	}
-	return "[" + strings.Join(parts, ",") + "]"
 }

@@ -22,3 +22,15 @@ func Parse(path string) (*Book, error) {
 		return nil, fmt.Errorf("unsupported format: %s", filepath.Ext(path))
 	}
 }
+
+// ParseMeta reads only title and author without extracting full text content.
+func ParseMeta(path string) (*Book, error) {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".epub":
+		return ParseEPUBMeta(path)
+	case ".pdf":
+		return ParsePDFMeta(path)
+	default:
+		return nil, fmt.Errorf("unsupported format: %s", filepath.Ext(path))
+	}
+}

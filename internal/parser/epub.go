@@ -35,6 +35,32 @@ type epubPackage struct {
 	} `xml:"spine"`
 }
 
+func ParseEPUBMeta(path string) (*Book, error) {
+	r, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, fmt.Errorf("open epub: %w", err)
+	}
+	defer r.Close()
+
+	containerData, err := readZipEntry(r, "META-INF/container.xml")
+	if err != nil {
+		return nil, fmt.Errorf("container.xml: %w", err)
+	}
+	var c epubContainer
+	if err := xml.Unmarshal(containerData, &c); err != nil {
+		return nil, fmt.Errorf("parse container.xml: %w", err)
+	}
+	opfData, err := readZipEntry(r, c.Rootfile.FullPath)
+	if err != nil {
+		return nil, fmt.Errorf("opf: %w", err)
+	}
+	var pkg epubPackage
+	if err := xml.Unmarshal(opfData, &pkg); err != nil {
+		return nil, fmt.Errorf("parse opf: %w", err)
+	}
+	return &Book{Title: pkg.Metadata.Title, Author: pkg.Metadata.Author}, nil
+}
+
 func ParseEPUB(path string) (*Book, error) {
 	r, err := zip.OpenReader(path)
 	if err != nil {

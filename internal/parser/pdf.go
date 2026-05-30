@@ -7,6 +7,15 @@ import (
 	"github.com/ledongthuc/pdf"
 )
 
+func ParsePDFMeta(path string) (*Book, error) {
+	f, r, err := pdf.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("open pdf: %w", err)
+	}
+	defer f.Close()
+	return &Book{Title: pdfMeta(r, "Title"), Author: pdfMeta(r, "Author")}, nil
+}
+
 func ParsePDF(path string) (*Book, error) {
 	f, r, err := pdf.Open(path)
 	if err != nil {
