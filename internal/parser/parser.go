@@ -19,6 +19,8 @@ func Parse(path string) (*Book, error) {
 		return ParseEPUB(path)
 	case ".pdf":
 		return ParsePDF(path)
+	case ".mobi":
+		return ParseMOBI(path)
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", filepath.Ext(path))
 	}
@@ -40,6 +42,8 @@ func ParseMeta(path string) (*Book, error) {
 		return ParseEPUBMeta(path)
 	case ".pdf":
 		return ParsePDFMeta(path)
+	case ".mobi":
+		return ParseMOBIMeta(path)
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", filepath.Ext(path))
 	}

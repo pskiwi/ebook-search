@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/pskiwi/ebook-search/internal/parser"
 )
@@ -56,8 +57,11 @@ func (imp *Importer) Run(ctx context.Context, dir string) error {
 		if d.IsDir() {
 			return nil
 		}
+		if strings.HasPrefix(filepath.Base(path), "._") {
+			return nil
+		}
 		ext := strings.ToLower(filepath.Ext(path))
-		if ext != ".epub" && ext != ".pdf" {
+		if ext != ".epub" && ext != ".pdf" && ext != ".mobi" {
 			return nil
 		}
 		processed++
@@ -171,7 +175,7 @@ func (imp *Importer) importFile(ctx context.Context, path string) (string, bool,
 	book.Author = parser.CleanMeta(book.Author)
 
 	if book.Title == "" || looksLikeGarbage(book.Title) || looksLikeSeriesNumber(book.Title) {
-		if better := TitleFromPath(path); len(better) > len(book.Title) {
+		if better := TitleFromPath(path); better != "" {
 			book.Title = better
 		}
 	}
@@ -211,17 +215,29 @@ func (imp *Importer) importFile(ctx context.Context, path string) (string, bool,
 // falling back to the cleaned filename, then the author directory.
 func TitleFromPath(path string) string {
 	parent := filepath.Base(filepath.Dir(path))
+
+	// Calibre convention: parent dir is "Title (ID)" — reliable title source
 	if i := strings.LastIndex(parent, " ("); i > 0 {
-		parent = strings.TrimSpace(parent[:i])
+		candidate := strings.TrimSpace(parent[:i])
+		candidate = strings.ReplaceAll(candidate, "_ ", ": ")
+		candidate = strings.ReplaceAll(candidate, "_", " ")
+		if !looksLikeGarbage(candidate) {
+			return candidate
+		}
 	}
+
+	// Non-Calibre: try the filename first (more specific than a collection dir)
+	if name := titleFromFilename(path); !looksLikeGarbage(name) && len(name) > 0 {
+		return name
+	}
+
+	// Fall back to parent directory name
 	parent = strings.ReplaceAll(parent, "_ ", ": ")
 	parent = strings.ReplaceAll(parent, "_", " ")
 	if !looksLikeGarbage(parent) {
 		return parent
 	}
-	if name := titleFromFilename(path); !looksLikeGarbage(name) && len(name) > 0 {
-		return name
-	}
+
 	return authorFromPath(path)
 }
 
@@ -282,7 +298,28 @@ func looksLikeGarbage(s string) bool {
 			break
 		}
 	}
-	return allDigits
+	if allDigits {
+		return true
+	}
+	// PDF anchor/bookmark IDs (e.g. "#000LaRosaCip") → not a real title
+	if strings.HasPrefix(s, "#") {
+		return true
+	}
+	// control characters → binary garbage from broken PDF metadata
+	for _, r := range s {
+		if r < 0x20 && r != '\t' && r != '\n' && r != '\r' {
+			return true
+		}
+	}
+	// no letters at all (e.g. "-", "---", "42") → not a real title
+	hasLetter := false
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			hasLetter = true
+			break
+		}
+	}
+	return !hasLetter
 }
 
 func fileHash(path string) (string, error) {
