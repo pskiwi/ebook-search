@@ -57,5 +57,19 @@ func pdfMeta(r *pdf.Reader, key string) string {
 	if v.IsNull() {
 		return ""
 	}
-	return v.String()
+	return decodePDFString(v.String())
+}
+
+// decodePDFString handles UTF-16BE strings (marked by a \xfe\xff BOM).
+// All other strings are returned as-is.
+func decodePDFString(s string) string {
+	b := []byte(s)
+	if len(b) >= 2 && b[0] == 0xfe && b[1] == 0xff {
+		runes := make([]rune, 0, len(b)/2)
+		for i := 2; i+1 < len(b); i += 2 {
+			runes = append(runes, rune(b[i])<<8|rune(b[i+1]))
+		}
+		return string(runes)
+	}
+	return s
 }
