@@ -31,7 +31,7 @@ Die App läuft danach auf [http://localhost:8080](http://localhost:8080).
 Läuft lokal (nicht im Container), liest Calibre-Bibliotheksstruktur:
 
 ```bash
-DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable \
+DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/ebook_search?sslmode=disable \
   go run ./cmd/import
 ```
 
@@ -40,7 +40,7 @@ DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable 
 Lokal mit nativem Ollama (Metal/GPU):
 
 ```bash
-DATABASE_URL=postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable \
+DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/ebook_search?sslmode=disable \
   go run ./cmd/classify
 ```
 
@@ -55,7 +55,7 @@ docker compose --profile classify run --rm classify
 ```bash
 go run github.com/pressly/goose/v3/cmd/goose \
   -dir internal/db/migrations postgres \
-  "postgres://ebook:ebook@localhost:5432/ebook_search?sslmode=disable" up
+  "postgres://USER:PASSWORD@localhost:5432/ebook_search?sslmode=disable" up
 ```
 
 ## Konfiguration
