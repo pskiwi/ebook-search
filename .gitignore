@@ -1,8 +1,14 @@
 /server
 /classify
 /import
+/migrate
+/fetchdesc
+/fixtitles
+*.png
+*.log
 *.env
 .env
+not-found.tsv
 data/
 .claude/
 .playwright-mcp/
