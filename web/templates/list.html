@@ -28,7 +28,6 @@
           {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
           <span class="book-path">{{.FilePath}}</span>
         </div>
-        {{if gt (len .Formats) 1}}
         <div class="book-formats">
           {{range .Formats}}
           <span class="badge {{.FormatClass}}"
@@ -39,9 +38,6 @@
                 onclick="event.stopPropagation()">{{.Format}}</span>
           {{end}}
         </div>
-        {{else}}
-        <span class="badge {{.FormatClass}}">{{.Format}}</span>
-        {{end}}
       </li>
       {{end}}
     </ul>

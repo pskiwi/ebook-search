@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ebook Search</title>
+  <title>Elektro-Buch</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Ebook Search</h1>
+      <h1>Elektro-Buch</h1>
       <div class="header-meta">
         <p class="total-count">{{.TotalCount}} Bücher</p>
+        <a href="/suggestions" class="list-link">Vorschläge</a>
         <a href="/list" class="list-link" id="list-count">Merkliste{{if gt .ListCount 0}} ({{.ListCount}}){{end}}</a>
+        <a href="/stats" class="list-link">Statistiken</a>
       </div>
     </header>
     <div class="search-wrap">

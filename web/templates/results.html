@@ -1,5 +1,4 @@
 {{define "results"}}
-<p class="count">{{len .Books}}{{if .HasMore}}+{{end}} {{if eq (len .Books) 1}}Buch{{else}}Bücher{{end}}</p>
 {{if .Books}}
 <ul class="books" id="book-list">
   {{range .Books}}
@@ -14,7 +13,6 @@
       {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
       <span class="book-path">{{.FilePath}}</span>
     </div>
-    {{if gt (len .Formats) 1}}
     <div class="book-formats">
       {{range .Formats}}
       <span class="badge {{.FormatClass}}"
@@ -25,9 +23,6 @@
             onclick="event.stopPropagation()">{{.Format}}</span>
       {{end}}
     </div>
-    {{else}}
-    <span class="badge {{.FormatClass}}">{{.Format}}</span>
-    {{end}}
   </li>
   {{end}}
   {{if .HasMore}}
@@ -56,7 +51,6 @@
     {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
     <span class="book-path">{{.FilePath}}</span>
   </div>
-  {{if gt (len .Formats) 1}}
   <div class="book-formats">
     {{range .Formats}}
     <span class="badge {{.FormatClass}}"
@@ -67,9 +61,6 @@
           onclick="event.stopPropagation()">{{.Format}}</span>
     {{end}}
   </div>
-  {{else}}
-  <span class="badge {{.FormatClass}}">{{.Format}}</span>
-  {{end}}
 </li>
 {{end}}
 {{if .HasMore}}
