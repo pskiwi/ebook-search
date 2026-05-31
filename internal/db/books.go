@@ -4,7 +4,27 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
+
+type HashDupeGroup struct {
+	Hash  string
+	Count int
+	Paths []string
+}
+
+type Stats struct {
+	EpubCount     int
+	PdfCount      int
+	MobiCount     int
+	OtherCount    int
+	TotalCount    int
+	EpubDupeCount int
+	PdfDupeCount  int
+	MobiDupeCount int
+	HashDupeCount int
+	HashDupes     []HashDupeGroup
+}
 
 type Book struct {
 	ID          int64
@@ -132,6 +152,38 @@ func NormalizeGenre(ctx context.Context, db *sql.DB, oldGenre, newGenre string) 
 	return n, nil
 }
 
+func RandomBooksByGenre(ctx context.Context, db *sql.DB, genre string, limit int) ([]Book, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT id, title, COALESCE(author,''), COALESCE(genre,''), file_path
+		FROM books WHERE genre ILIKE '%' || $1 || '%'
+		ORDER BY RANDOM() LIMIT $2`, genre, limit)
+	if err != nil {
+		return nil, fmt.Errorf("random books by genre: %w", err)
+	}
+	defer rows.Close()
+	return scanBooks(rows)
+}
+
+func GetBookFiles(ctx context.Context, db *sql.DB, title, author string) ([]Book, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT id, title, COALESCE(author,''), COALESCE(genre,''), file_path, COALESCE(description,'')
+		FROM books WHERE title = $1 AND COALESCE(author,'') = $2
+		ORDER BY file_path`, title, author)
+	if err != nil {
+		return nil, fmt.Errorf("get book files: %w", err)
+	}
+	defer rows.Close()
+	var books []Book
+	for rows.Next() {
+		var b Book
+		if err := rows.Scan(&b.ID, &b.Title, &b.Author, &b.Genre, &b.FilePath, &b.Description); err != nil {
+			return nil, err
+		}
+		books = append(books, b)
+	}
+	return books, rows.Err()
+}
+
 func GetBook(ctx context.Context, db *sql.DB, id int64) (Book, error) {
 	var b Book
 	err := db.QueryRowContext(ctx, `
@@ -177,6 +229,64 @@ func CountReadingList(ctx context.Context, db *sql.DB) (int, error) {
 	var n int
 	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM reading_list`).Scan(&n)
 	return n, err
+}
+
+func GetStats(ctx context.Context, db *sql.DB) (Stats, error) {
+	var s Stats
+
+	err := db.QueryRowContext(ctx, `
+		WITH dupe_hashes AS (
+			SELECT file_hash FROM books
+			WHERE file_hash IS NOT NULL
+			GROUP BY file_hash
+			HAVING COUNT(*) > 1
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.epub'),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.pdf'),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.mobi'),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) NOT LIKE '%.epub'
+			                   AND LOWER(b.file_path) NOT LIKE '%.pdf'
+			                   AND LOWER(b.file_path) NOT LIKE '%.mobi'),
+			COUNT(*),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.epub' AND d.file_hash IS NOT NULL),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.pdf'  AND d.file_hash IS NOT NULL),
+			COUNT(*) FILTER (WHERE LOWER(b.file_path) LIKE '%.mobi' AND d.file_hash IS NOT NULL)
+		FROM books b
+		LEFT JOIN dupe_hashes d ON b.file_hash = d.file_hash
+	`).Scan(&s.EpubCount, &s.PdfCount, &s.MobiCount, &s.OtherCount, &s.TotalCount,
+		&s.EpubDupeCount, &s.PdfDupeCount, &s.MobiDupeCount)
+	if err != nil {
+		return s, fmt.Errorf("stats format counts: %w", err)
+	}
+
+	rows, err := db.QueryContext(ctx, `
+		SELECT file_hash, COUNT(*) AS cnt,
+		       string_agg(file_path, '|' ORDER BY file_path) AS paths
+		FROM books
+		WHERE file_hash IS NOT NULL
+		GROUP BY file_hash
+		HAVING COUNT(*) > 1
+		ORDER BY cnt DESC, file_hash
+	`)
+	if err != nil {
+		return s, fmt.Errorf("stats hash dupes: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var g HashDupeGroup
+		var pathStr string
+		if err := rows.Scan(&g.Hash, &g.Count, &pathStr); err != nil {
+			return s, err
+		}
+		g.Paths = strings.Split(pathStr, "|")
+		s.HashDupes = append(s.HashDupes, g)
+	}
+	if err := rows.Err(); err != nil {
+		return s, err
+	}
+	s.HashDupeCount = len(s.HashDupes)
+	return s, nil
 }
 
 func scanBooks(rows *sql.Rows) ([]Book, error) {

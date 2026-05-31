@@ -1,0 +1,67 @@
+{{define "stats.html"}}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistiken – Ebook Search</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="/" class="header-link">Ebook Search</a></h1>
+      <p class="total-count">Statistiken</p>
+    </header>
+
+    <section>
+      <h2 style="font-size:1rem;font-weight:700;margin:1.5rem 0 0.75rem;">Formate</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid #e8e8e8;">
+            <th style="padding:0.5rem 0;">Format</th>
+            <th style="padding:0.5rem 0;text-align:right;">Anzahl</th>
+            <th style="padding:0.5rem 0;text-align:right;">Duplikate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:0.4rem 0;"><span class="badge epub">EPUB</span></td><td style="text-align:right;">{{.Stats.EpubCount}}</td><td style="text-align:right;">{{.Stats.EpubDupeCount}}</td></tr>
+          <tr><td style="padding:0.4rem 0;"><span class="badge pdf">PDF</span></td><td style="text-align:right;">{{.Stats.PdfCount}}</td><td style="text-align:right;">{{.Stats.PdfDupeCount}}</td></tr>
+          <tr><td style="padding:0.4rem 0;"><span class="badge mobi">MOBI</span></td><td style="text-align:right;">{{.Stats.MobiCount}}</td><td style="text-align:right;">{{.Stats.MobiDupeCount}}</td></tr>
+          {{if .Stats.OtherCount}}
+          <tr><td style="padding:0.4rem 0;"><span class="badge">Sonstige</span></td><td style="text-align:right;">{{.Stats.OtherCount}}</td><td></td></tr>
+          {{end}}
+          <tr style="border-top:1px solid #e8e8e8;font-weight:600;">
+            <td style="padding-top:0.5rem;">Gesamt</td>
+            <td style="text-align:right;padding-top:0.5rem;">{{.Stats.TotalCount}}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2 style="font-size:1rem;font-weight:700;margin:2rem 0 0.75rem;">
+        Inhaltsduplikate — {{.Stats.HashDupeCount}} Gruppen
+      </h2>
+      {{if .Stats.HashDupes}}
+      <ul class="books">
+        {{range .Stats.HashDupes}}
+        <li class="book" style="flex-direction:column;align-items:flex-start;cursor:default;gap:0.25rem;">
+          <div style="font-size:0.75rem;color:#888;">
+            {{.Count}} Kopien · SHA256: <code style="font-size:0.7rem;">{{.Hash}}</code>
+          </div>
+          {{range .Paths}}
+          <div class="book-path" style="font-size:0.75rem;">{{.}}</div>
+          {{end}}
+        </li>
+        {{end}}
+      </ul>
+      {{else}}
+      <p class="empty">Keine Inhaltsduplikate gefunden.</p>
+      {{end}}
+    </section>
+  </div>
+</body>
+</html>
+{{end}}

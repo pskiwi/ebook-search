@@ -22,7 +22,7 @@ func main() {
 	defer pool.Close()
 
 	mux := http.NewServeMux()
-	handler.Register(mux, pool)
+	handler.Register(mux, pool, os.Getenv("GOOGLE_BOOKS_API_KEY"))
 
 	log.Println("listening on :8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {

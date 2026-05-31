@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vorschläge – Elektro-Buch</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Vorschläge</h1>
+      <div class="header-meta">
+        <a href="/" class="list-link">← Alle Bücher</a>
+      </div>
+    </header>
+    <div class="search-wrap">
+      <select
+        name="genre"
+        id="genre-select"
+        hx-get="/suggestions"
+        hx-target="#suggestions-results"
+        hx-trigger="change">
+        <option value="">Genre wählen…</option>
+        {{range .Genres}}<option value="{{.}}"{{if eq . $.Genre}} selected{{end}}>{{.}}</option>{{end}}
+      </select>
+      {{if .Genre}}
+      <button
+        hx-get="/suggestions?genre={{.Genre}}"
+        hx-target="#suggestions-results"
+        hx-trigger="click"
+        class="reroll-btn">Neu würfeln</button>
+      {{end}}
+    </div>
+    <div id="suggestions-results">
+      {{template "suggestions-results" .}}
+    </div>
+  </div>
+  <div id="detail-container"></div>
+</body>
+</html>
+
+{{define "suggestions-results"}}
+{{if .Books}}
+<ul class="books">
+  {{range .Books}}
+  <li class="book"
+      hx-get="/book/{{(index .Formats 0).ID}}"
+      hx-target="#detail-container"
+      hx-swap="innerHTML"
+      hx-trigger="click">
+    <div class="book-info">
+      <span class="book-title">{{.Title}}</span>
+      <span class="book-author">{{.Author}}</span>
+      {{if .Genre}}<span class="book-genre">{{.Genre}}</span>{{end}}
+      <span class="book-path">{{.FilePath}}</span>
+    </div>
+    <div class="book-formats">
+      {{range .Formats}}
+      <span class="badge {{.FormatClass}}"
+            hx-get="/book/{{.ID}}"
+            hx-target="#detail-container"
+            hx-swap="innerHTML"
+            hx-trigger="click"
+            onclick="event.stopPropagation()">{{.Format}}</span>
+      {{end}}
+    </div>
+  </li>
+  {{end}}
+</ul>
+{{else if .Genre}}
+<p class="empty">Keine Bücher im Genre «{{.Genre}}» gefunden.</p>
+{{end}}
+{{end}}

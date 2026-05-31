@@ -3,7 +3,7 @@
   <div class="detail-panel">
     <button class="detail-close" onclick="document.getElementById('book-detail').remove()">✕</button>
     <div class="detail-header">
-      <span class="badge {{.FormatClass}}">{{.Format}}</span>
+      {{range .Formats}}<span class="badge {{.FormatClass}}">{{.Format}}</span>{{end}}
       {{if .Genre}}<span class="detail-genre">{{.Genre}}</span>{{end}}
     </div>
     <h2 class="detail-title">{{.Title}}</h2>
@@ -11,8 +11,19 @@
     {{if .Description}}
     <p class="detail-description">{{.Description}}</p>
     {{end}}
-    <p class="detail-path">{{.FilePath}}</p>
-    {{template "list-toggle-btn" .}}
+    <div class="detail-files">
+      {{range .Formats}}<p class="detail-path"><span class="badge {{.FormatClass}}">{{.Format}}</span> {{.FilePath}}</p>{{end}}
+    </div>
+    <div class="detail-actions">
+      {{template "list-toggle-btn" .}}
+    </div>
+    <div id="gb-info-{{.ID}}" class="gb-info-panel"
+         hx-get="/book/info/{{.ID}}"
+         hx-trigger="load"
+         hx-swap="innerHTML"
+         hx-indicator="#gb-spinner-{{.ID}}">
+      <span id="gb-spinner-{{.ID}}" class="htmx-indicator gb-spinner">…</span>
+    </div>
   </div>
 </div>
 {{end}}
@@ -24,6 +35,25 @@
         hx-swap="outerHTML">
   {{if .InList}}✓ Auf Merkliste{{else}}+ Zur Merkliste{{end}}
 </button>
+{{end}}
+
+{{define "book-info"}}
+{{if .NotFound}}
+<p class="gb-not-found">Kein Eintrag bei Google Books gefunden.</p>
+{{else}}
+<div class="gb-info-content">
+  {{if .Thumbnail}}<img class="gb-cover" src="{{.Thumbnail}}" alt="Cover">{{end}}
+  <div class="gb-meta">
+    {{if .Publisher}}<p><span class="gb-label">Verlag</span> {{.Publisher}}</p>{{end}}
+    {{if .PublishedDate}}<p><span class="gb-label">Erschienen</span> {{.PublishedDate}}</p>{{end}}
+    {{if .PageCount}}<p><span class="gb-label">Seiten</span> {{.PageCount}}</p>{{end}}
+    {{if .Categories}}<p><span class="gb-label">Kategorien</span> {{.Categories}}</p>{{end}}
+    {{if .ISBN}}<p><span class="gb-label">ISBN</span> {{.ISBN}}</p>{{end}}
+    {{if .Description}}<p class="gb-description">{{.Description}}</p>{{end}}
+    {{if .InfoLink}}<a href="{{.InfoLink}}" target="_blank" rel="noopener" class="gb-link">Bei Google Books öffnen →</a>{{end}}
+  </div>
+</div>
+{{end}}
 {{end}}
 
 {{define "list-count-oob"}}

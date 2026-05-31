@@ -16,6 +16,7 @@ type formatEntry struct {
 	ID          int64
 	Format      string
 	FormatClass string
+	FilePath    string
 }
 
 type bookView struct {
@@ -43,6 +44,16 @@ type listView struct {
 	Books []bookView
 }
 
+type suggestionsView struct {
+	Books  []bookView
+	Genre  string
+	Genres []string
+}
+
+type statsView struct {
+	Stats dbpkg.Stats
+}
+
 type resultsView struct {
 	Books      []bookView
 	HasMore    bool
@@ -53,7 +64,7 @@ type resultsView struct {
 
 var tmpl *template.Template
 
-func Register(mux *http.ServeMux, db *sql.DB) {
+func Register(mux *http.ServeMux, db *sql.DB, googleBooksKey string) {
 	tmpl = template.Must(template.New("").Funcs(template.FuncMap{
 		"urlquery": url.QueryEscape,
 	}).ParseGlob("web/templates/*.html"))
@@ -61,9 +72,12 @@ func Register(mux *http.ServeMux, db *sql.DB) {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 	mux.HandleFunc("/", indexHandler(db))
 	mux.HandleFunc("/search", searchHandler(db))
+	mux.HandleFunc("/book/info/", bookInfoHandler(db, googleBooksKey))
 	mux.HandleFunc("/book/", bookHandler(db))
 	mux.HandleFunc("/list", listHandler(db))
 	mux.HandleFunc("/list/toggle/", listToggleHandler(db))
+	mux.HandleFunc("/suggestions", suggestionsHandler(db))
+	mux.HandleFunc("/stats", statsHandler(db))
 }
 
 func indexHandler(db *sql.DB) http.HandlerFunc {
@@ -117,6 +131,19 @@ func bookHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		inList, _ := dbpkg.IsInReadingList(r.Context(), db, id)
+		files, err := dbpkg.GetBookFiles(r.Context(), db, book.Title, book.Author)
+		if err != nil || len(files) == 0 {
+			files = []dbpkg.Book{book}
+		}
+		seen := make(map[string]bool)
+		var formats []formatEntry
+		for _, f := range files {
+			ext := strings.ToUpper(strings.TrimPrefix(filepath.Ext(f.FilePath), "."))
+			if !seen[ext] {
+				seen[ext] = true
+				formats = append(formats, formatEntry{ID: f.ID, Format: ext, FormatClass: strings.ToLower(ext), FilePath: f.FilePath})
+			}
+		}
 		ext := strings.ToUpper(strings.TrimPrefix(filepath.Ext(book.FilePath), "."))
 		view := bookView{
 			ID:          book.ID,
@@ -128,6 +155,7 @@ func bookHandler(db *sql.DB) http.HandlerFunc {
 			FormatClass: strings.ToLower(ext),
 			Description: book.Description,
 			InList:      inList,
+			Formats:     formats,
 		}
 		tmpl.ExecuteTemplate(w, "book-detail", view)
 	}
@@ -168,6 +196,37 @@ func listHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+func suggestionsHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		genre := strings.TrimSpace(r.URL.Query().Get("genre"))
+		view := suggestionsView{Genre: genre, Genres: genres}
+		if genre != "" {
+			books, err := dbpkg.RandomBooksByGenre(r.Context(), db, genre, 10)
+			if err != nil {
+				http.Error(w, "Datenbankfehler", http.StatusInternalServerError)
+				return
+			}
+			view.Books = toViews(books)
+		}
+		if r.Header.Get("HX-Request") == "true" {
+			tmpl.ExecuteTemplate(w, "suggestions-results", view)
+		} else {
+			tmpl.ExecuteTemplate(w, "suggestions.html", view)
+		}
+	}
+}
+
+func statsHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		stats, err := dbpkg.GetStats(r.Context(), db)
+		if err != nil {
+			http.Error(w, "Datenbankfehler", http.StatusInternalServerError)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "stats.html", statsView{Stats: stats})
+	}
+}
+
 func searchHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -197,6 +256,28 @@ func searchHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+func bookInfoHandler(db *sql.DB, apiKey string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idStr := strings.TrimPrefix(r.URL.Path, "/book/info/")
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		book, err := dbpkg.GetBook(r.Context(), db, id)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		info, err := fetchGoogleBooksInfo(apiKey, book.Title, book.Author)
+		if err != nil {
+			http.Error(w, "Google Books nicht erreichbar", http.StatusBadGateway)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "book-info", info)
+	}
+}
+
 func buildView(books []dbpkg.Book, offset int, query, genre string) resultsView {
 	hasMore := len(books) > 100
 	if hasMore {
@@ -219,10 +300,19 @@ func toViews(books []dbpkg.Book) []bookView {
 	for _, b := range books {
 		ext := strings.ToUpper(strings.TrimPrefix(filepath.Ext(b.FilePath), "."))
 		k := key{b.Title, b.Author}
-		fe := formatEntry{ID: b.ID, Format: ext, FormatClass: strings.ToLower(ext)}
+		fe := formatEntry{ID: b.ID, Format: ext, FormatClass: strings.ToLower(ext), FilePath: b.FilePath}
 
 		if idx, ok := seen[k]; ok {
-			views[idx].Formats = append(views[idx].Formats, fe)
+			already := false
+			for _, f := range views[idx].Formats {
+				if f.Format == ext {
+					already = true
+					break
+				}
+			}
+			if !already {
+				views[idx].Formats = append(views[idx].Formats, fe)
+			}
 		} else {
 			seen[k] = len(views)
 			views = append(views, bookView{

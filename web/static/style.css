@@ -135,6 +135,13 @@ input[type="search"]:focus {
   cursor: pointer;
 }
 
+.detail-files .badge {
+  margin-left: 0;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.6rem;
+  vertical-align: middle;
+}
+
 .badge {
   flex-shrink: 0;
   margin-left: 1rem;
@@ -154,6 +161,11 @@ input[type="search"]:focus {
 .badge.pdf {
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.badge.mobi {
+  background: #d1fae5;
+  color: #065f46;
 }
 
 .empty {
@@ -277,6 +289,99 @@ input[type="search"]:focus {
   color: #fff;
 }
 
+.detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.gb-btn {
+  display: inline-block;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.gb-btn:hover {
+  border-color: #4f7ef7;
+  color: #4f7ef7;
+}
+
+.gb-spinner {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.gb-info-panel {
+  margin-top: 1rem;
+}
+
+.gb-not-found {
+  font-size: 0.82rem;
+  color: #aaa;
+  padding: 0.5rem 0;
+}
+
+.gb-info-content {
+  display: flex;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.gb-cover {
+  width: 80px;
+  height: auto;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.gb-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: #444;
+  min-width: 0;
+}
+
+.gb-label {
+  font-weight: 600;
+  color: #888;
+  margin-right: 0.35rem;
+}
+
+.gb-description {
+  margin-top: 0.4rem;
+  line-height: 1.55;
+  color: #555;
+  font-size: 0.8rem;
+}
+
+.gb-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #4f7ef7;
+  text-decoration: none;
+}
+
+.gb-link:hover {
+  text-decoration: underline;
+}
+
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline; }
+.htmx-request.htmx-indicator { display: inline; }
+
 .header-meta {
   display: flex;
   align-items: baseline;
@@ -303,4 +408,39 @@ input[type="search"]:focus {
 .header-link {
   color: inherit;
   text-decoration: none;
+}
+
+select {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1.1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+
+select:focus {
+  border-color: #4f7ef7;
+  box-shadow: 0 0 0 3px rgba(79, 126, 247, 0.15);
+}
+
+.reroll-btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 2px solid #4f7ef7;
+  border-radius: 8px;
+  background: #fff;
+  color: #4f7ef7;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  align-self: flex-start;
+}
+
+.reroll-btn:hover {
+  background: #4f7ef7;
+  color: #fff;
 }
